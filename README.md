@@ -6,6 +6,10 @@ features = ['open', 'high', 'low', 'close', 'volume',
             'Net Income', 'Total Revenue', 'Total Assets',
             'Gross Margin', 'Total ESG Risk score']
 ```
+Split test and train as:
+```python
+train_test_split(X, y, test_size=0.2, random_state=42)
+```
 
 ## Labeling Clarification
 
