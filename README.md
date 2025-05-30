@@ -7,13 +7,13 @@ To ensure fair and consistent model comparison, please notice that:
 Since we find some unscaled data for the dataset uploaded before, you can use the ```merged.py``` to merge the unified dataset for comparative analysis (under temp_dataset direcotry).
 It includes Jashan’s engineer features and all unscaled data are scaled by using ```scaler = StandardScaler()```, which can be directly used for modeling.
 
-- Make sure to use the same set of features during testing (as following code), so results are comparable across models. Use ```plt.savefig``` to help with.
+- Make sure to use the same set of features during testing (as following code), so results are comparable across models.
 
 - Use a unified labeling format (Buy / Hold / Sell).
 If different labeling methods are used (binary vs. three), three models will not be directly comparable. If you use the ```merged.py```, it pre-label all datas so you can ignore this step.
-Labeling rule is explained in ```Labeling Clarification``` section if you want to check with.
+Labeling rule is explained in ```Labeling Clarification``` section if you want to check with. 
 
-- Export visilization result since we cant not directly screenshot everything in our terminal for our final report.
+- Export visilization result since we cant not directly screenshot everything in our terminal for our final report. Use ```plt.savefig``` to help with.
 
 Features we considered right now:
 ```python
