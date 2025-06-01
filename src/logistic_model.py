@@ -15,9 +15,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
 # Load data
-price_df = pd.read_csv("data_Cleaning/cleaned/prices_cleaned_scaled.csv")
-fund_df = pd.read_csv("data_Cleaning/cleaned/fundamentals_cleaned_scaled.csv")
-esg_df = pd.read_csv("data_Cleaning/cleaned/esgRisk_cleaned_scaled.csv")
+price_df = pd.read_csv("data_Cleaning/cleaned/prices_cleaned.csv")
+fund_df = pd.read_csv("data_Cleaning/cleaned/fundamentals_cleaned.csv")
+esg_df = pd.read_csv("data_Cleaning/cleaned/esgRisk_cleaned.csv")
 
 # Fix column names and formats
 fund_df = fund_df.rename(columns={'Ticker Symbol': 'symbol', 'Period Ending': 'date'})
