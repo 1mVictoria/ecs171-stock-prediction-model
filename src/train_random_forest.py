@@ -12,6 +12,7 @@ No future prices are leaked.
 """
 import os, argparse, pickle
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split, RandomizedSearchCV, TimeSeriesSplit
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
@@ -28,6 +29,22 @@ PARAM_DIST = {
 }
 # ──────────────────────────────────────────────────────────────
 DEFAULT_HORIZON = 21
+
+def compute_rsi(series: pd.Series, window: int = 14) -> pd.Series:
+    """
+    Relative Strength Index (RSI) computed with Wilder's smoothing.
+    Returns a Series of RSI values aligned with *series*.
+    """
+    delta = series.diff()
+    gain = delta.clip(lower=0).fillna(0)
+    loss = (-delta.clip(upper=0)).fillna(0)
+    # Wilder's smoothing
+    gain = gain.ewm(alpha=1/window, adjust=False).mean()
+    loss = loss.ewm(alpha=1/window, adjust=False).mean()
+    rs = gain / loss.replace(0, np.nan)
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
 
 def load_and_merge(data_dir: str) -> pd.DataFrame:
     """Load your cleaned price data (add fundamentals/ESG merge here if needed)."""
@@ -63,9 +80,33 @@ def create_labels(df: pd.DataFrame,
 
 
 def prepare_features(df: pd.DataFrame):
-    """Use today's numeric columns as features (expand as desired)."""
-    X = df[["close", "volume"]].copy()
-    y = df["label"].copy()
+    """
+    Enriches raw price data with nine features:
+        close, volume, ret_1d, ret_2d, momentum_5d,
+        ma_5d, vol_5d, accel, rsi_14
+    Returns X (features) and y (binary labels).
+    """
+    df = df.copy()
+    grp_close = df.groupby("symbol")["close"]
+
+    # Technical features
+    df["ret_1d"]      = grp_close.pct_change(1)
+    df["ret_2d"]      = grp_close.pct_change(2)
+    df["momentum_5d"] = grp_close.transform(lambda x: x / x.shift(5))
+    df["ma_5d"]       = grp_close.transform(lambda x: x.rolling(5).mean())
+    df["vol_5d"]      = grp_close.transform(lambda x: x.rolling(5).std())
+    df["accel"]       = grp_close.diff().diff()
+    df["rsi_14"]      = grp_close.transform(compute_rsi)
+
+    feature_cols = [
+        "close", "volume", "ret_1d", "ret_2d", "momentum_5d",
+        "ma_5d", "vol_5d", "accel", "rsi_14"
+    ]
+
+    # Drop rows with any NaNs in features or label
+    df = df.dropna(subset=feature_cols + ["label"]).copy()
+    X = df[feature_cols]
+    y = df["label"]
     return X, y
 
 
@@ -112,6 +153,7 @@ def main(args):
             n_jobs=-1,
             random_state=args.seed,
         )
+    
 
     # 6) Optional random search
     if args.random_search:
@@ -130,7 +172,17 @@ def main(args):
         print("Best params:", search.best_params_)
     else:
         clf.fit(X_tr, y_tr)
-
+    # 7.5) Top‑10 feature importances
+    importances = (
+        pd.Series(clf.feature_importances_, index=X_tr.columns)
+          .sort_values(ascending=False)
+    )
+    top_k = min(10, len(importances))
+    print(f"=== Top {top_k} Feature Importances ===")
+    print(importances.head(top_k).to_string(float_format="%.4f"))
+    top_k = 10
+    print("\nTop features (k = {}):".format(min(top_k, len(importances))))
+    print(importances.head(top_k).to_string(float_format="%.4f"))
     # 7) Evaluation
     y_pred = clf.predict(X_te)
     print("=== Classification Report (0 = Hold, 1 = Action) ===")
