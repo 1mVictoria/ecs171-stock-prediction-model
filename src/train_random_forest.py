@@ -18,6 +18,9 @@ from sklearn.ensemble import RandomForestClassifier
 from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils.class_weight import compute_class_weight
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 # ──────────────────────────────────────────────────────────────
 # Hyper-parameter grid for optional RandomizedSearchCV
@@ -46,12 +49,59 @@ def compute_rsi(series: pd.Series, window: int = 14) -> pd.Series:
     return rsi
 
 
+import os
+import pandas as pd
+
 def load_and_merge(data_dir: str) -> pd.DataFrame:
-    """Load your cleaned price data (add fundamentals/ESG merge here if needed)."""
-    price = pd.read_csv(os.path.join(data_dir, "prices_cleaned.csv"))
+    """
+    1) Reads prices_cleaned.csv (has columns: symbol, date, close, volume, …).
+    2) Reads fundamentals_cleaned.csv (has columns exactly as in your file).
+    3) Reads esgRisk_cleaned.csv (has columns exactly as in your file).
+
+    Returns a single DataFrame where each price row carries all the columns
+    from the fundamentals and ESG files, joined purely on 'symbol'.
+    """
+    # --- 1) Load price data (daily time series) ---
+    price = pd.read_csv(
+        os.path.join(data_dir, "prices_cleaned.csv"),
+        parse_dates=["date"]
+    )
+    # Lowercase + strip whitespace from headers
     price.columns = price.columns.str.lower().str.strip()
-    price["date"] = pd.to_datetime(price["date"])
-    return price.sort_values(["symbol", "date"]).reset_index(drop=True)
+    price = price.sort_values(["symbol", "date"]).reset_index(drop=True)
+
+    # --- 2) Load fundamentals (static per symbol) ---
+    fund = pd.read_csv(os.path.join(data_dir, "fundamentals_cleaned.csv"))
+    fund.columns = fund.columns.str.lower().str.strip()
+    # Rename 'ticker symbol' → 'symbol' so we can join on that key
+    fund = fund.rename(columns={"ticker symbol": "symbol"})
+    # Strip whitespace in the symbol column itself
+    fund["symbol"] = fund["symbol"].astype(str).str.strip()
+
+    # --- 3) Load ESG (static per symbol) ---
+    esg = pd.read_csv(os.path.join(data_dir, "esgRisk_cleaned.csv"))
+    esg.columns = esg.columns.str.lower().str.strip()
+    # The ESG file has a 'symbol' column already (after lowercasing).
+    esg["symbol"] = esg["symbol"].astype(str).str.strip()
+
+    # --- 4) Merge price ← fundamentals on "symbol" (left join) ---
+    merged = pd.merge(
+        price,
+        fund,
+        on="symbol",
+        how="left"
+    )
+
+    # --- 5) Merge merged ← ESG on "symbol" (left join) ---
+    merged = pd.merge(
+        merged,
+        esg,
+        on="symbol",
+        how="left"
+    )
+
+    return merged
+
 
 
 def create_labels(df: pd.DataFrame,
@@ -81,15 +131,24 @@ def create_labels(df: pd.DataFrame,
 
 def prepare_features(df: pd.DataFrame):
     """
-    Enriches raw price data with nine features:
-        close, volume, ret_1d, ret_2d, momentum_5d,
-        ma_5d, vol_5d, accel, rsi_14
-    Returns X (features) and y (binary labels).
+    From the merged df (price + fundamentals + ESG), produce:
+      • 9 technical features (close, volume, ret_1d, …, rsi_14)
+      • 3 fundamental features:
+          - earnings per share
+          - total revenue
+          - net income
+      • 4 ESG features:
+          - total esg risk score
+          - environment risk score
+          - social risk score
+          - governance risk score
+
+    Returns X (feature DataFrame) and y (Series of labels).
     """
     df = df.copy()
     grp_close = df.groupby("symbol")["close"]
 
-    # Technical features
+    # --- 1) Create technical features exactly as before ---
     df["ret_1d"]      = grp_close.pct_change(1)
     df["ret_2d"]      = grp_close.pct_change(2)
     df["momentum_5d"] = grp_close.transform(lambda x: x / x.shift(5))
@@ -98,16 +157,47 @@ def prepare_features(df: pd.DataFrame):
     df["accel"]       = grp_close.diff().diff()
     df["rsi_14"]      = grp_close.transform(compute_rsi)
 
+    # --- 2) Fundamental features (use exact lowercased names) ---
+    #    If you want to include more fundamentals, add them here:
+    df["earnings per share"] = df["earnings per share"]
+    df["total revenue"]      = df["total revenue"]
+    df["net income"]         = df["net income"]
+
+    # --- 3) ESG features (use exact lowercased names) ---
+    df["total esg risk score"]    = df["total esg risk score"]
+    df["environment risk score"]  = df["environment risk score"]
+    df["social risk score"]       = df["social risk score"]
+    df["governance risk score"]   = df["governance risk score"]
+    # If you want to include controversy score, you can add:
+    # df["controversy score"] = df["controversy score"]
+
+    # --- 4) Compile the complete list of features (9 + 3 + 4 = 16) ---
     feature_cols = [
-        "close", "volume", "ret_1d", "ret_2d", "momentum_5d",
-        "ma_5d", "vol_5d", "accel", "rsi_14"
+        # 9 technical features:
+        "close", "volume",
+        "ret_1d", "ret_2d", "momentum_5d",
+        "ma_5d", "vol_5d", "accel", "rsi_14",
+
+        # 3 fundamentals:
+        "earnings per share",
+        "total revenue",
+        "net income",
+
+        # 4 ESG features:
+        "total esg risk score",
+        "environment risk score",
+        "social risk score",
+        "governance risk score"
+        # If using controversy score: add "controversy score" here
     ]
 
-    # Drop rows with any NaNs in features or label
+    # --- 5) Drop rows missing any of these features or the label ---
     df = df.dropna(subset=feature_cols + ["label"]).copy()
+
     X = df[feature_cols]
     y = df["label"]
     return X, y
+
 
 
 def main(args):
@@ -189,6 +279,38 @@ def main(args):
     print(classification_report(y_te, y_pred, target_names=["Hold", "Action"]))
     print("=== Confusion Matrix ===")
     print(confusion_matrix(y_te, y_pred))
+    
+    plots_dir = os.path.join(args.output_dir, "figures")
+    os.makedirs(plots_dir, exist_ok=True)
+    # --- (a) Feature-importance bar chart -----------------------
+    plt.figure(figsize=(6, 4))
+    importances.iloc[::-1].plot(kind="barh")          # reverse for top-to-bottom
+    plt.xlabel("Gini importance")
+    plt.title("Top 9 Feature Importances")
+    plt.tight_layout()
+    feat_path = os.path.join(plots_dir, "rf_feature_importance.pdf")
+    plt.savefig(feat_path)
+    plt.close()
+
+    # --- (b) Confusion-matrix heatmap ---------------------------
+    cm = confusion_matrix(y_te, y_pred)
+    plt.figure(figsize=(4, 4))
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        cbar=False,
+        xticklabels=["Pred Hold", "Pred Action"],
+        yticklabels=["True Hold", "True Action"],
+    )
+    plt.title("Confusion Matrix")
+    plt.tight_layout()
+    cm_path = os.path.join(plots_dir, "rf_confusion_matrix.pdf")
+    plt.savefig(cm_path)
+    plt.close()
+
+    print("Figures saved to:", plots_dir)
 
     # 8) Save model
     os.makedirs(args.output_dir, exist_ok=True)
