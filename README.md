@@ -1,5 +1,6 @@
 # ECS-171-Group18 Final Project - Stock Action Prediction
 
+## Project Structure
 
 ### `data_Cleaning/`
 Contains cleaned and preprocessed datasets, including:
@@ -9,20 +10,18 @@ Contains cleaned and preprocessed datasets, including:
 
 These files serve as input features for training the models.
 
----
 
 ### `src/`
 Hold the programming code for training and evaluating models:
 - Includes implementation for Linear Regression, Logistic Regression, and Random Forest
 - Handles feature engineering, class balancing, and model optimization
 
----
+
 
 ### `outputs/`
 Stores visual results of model training:
 - Evaluation reports, confusion matrices, and performance visualizations
 
----
 
 ## Highlights
 
@@ -34,7 +33,7 @@ Stores visual results of model training:
 
 Victoria Zhang, Jennifer Liu, Rafi Biswas, Jashan Singh, Stephanie Espinoza
 
----
+
 
 
 
