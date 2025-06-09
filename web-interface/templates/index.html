@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Stock Action Predictor</title>
+
+  <!-- Bootstrap (for flash alerts) -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+        integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumFxp4CV0E7qO2Kc9vYJI67wLEnUE+d2Hdy4H/K"
+        crossorigin="anonymous" />
+  <!-- Your custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
+</head>
+<body>
+  <div class="app-container">
+    <!-- blurred gradient blobs -->
+    <div class="bg-circle circle1"></div>
+    <div class="bg-circle circle2"></div>
+
+    <header>
+      <h1>Stock Action Predictor</h1>
+      <p class="subtitle">Binary recommendation: Hold vs&nbsp;Action</p>
+    </header>
+
+    <form method="post" action="{{ url_for('index') }}">
+      <!-- ticker entry -->
+      <div class="form-group ticker-entry">
+        <label for="ticker">Ticker Symbol</label>
+        <input type="text" id="ticker" name="ticker"
+               class="form-control"
+               placeholder="e.g. NVDA" required
+               value="{{ request.form.ticker|default('') }}">
+      </div>
+
+      <!-- three glass panels -->
+      <div class="panels-row">
+        <!-- TECH panel -->
+        <div class="panel">
+          <h2>Technical&nbsp;Metrics</h2>
+          {% for fld, lbl in [
+              ('close','Close'), ('volume','Volume'),
+              ('ret_1d','1-Day Ret'), ('ret_2d','2-Day Ret'),
+              ('momentum_5d','5-Day Momentum'), ('ma_5d','5-Day MA'),
+              ('vol_5d','5-Day Vol'), ('accel','Acceleration'),
+              ('rsi_14','RSI (14)')] %}
+            <div class="form-group">
+              <label for="{{ fld }}">{{ lbl }}</label>
+              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- FUND panel -->
+        <div class="panel">
+          <h2>Fundamental&nbsp;Metrics</h2>
+          {% for fld, lbl in [
+              ('eps','EPS'),
+              ('total_revenue','Revenue'),
+              ('net_income','Net Income')] %}
+            <div class="form-group">
+              <label for="{{ fld }}">{{ lbl }}</label>
+              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- ESG panel -->
+        <div class="panel">
+          <h2>ESG&nbsp;Metrics</h2>
+          {% for fld, lbl in [
+              ('total_esg','Total ESG Risk'),
+              ('env_risk','Env Risk'),
+              ('social_risk','Social Risk'),
+              ('gov_risk','Gov Risk')] %}
+            <div class="form-group">
+              <label for="{{ fld }}">{{ lbl }}</label>
+              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Predict button + live result -->
+      <div class="btn-wrapper" style="display:flex;justify-content:center;align-items:center;gap:1rem;">
+        <button type="submit" class="btn-predict">PREDICT</button>
+        {% if prediction %}
+          <span class="result">{{ prediction }}</span>
+        {% endif %}
+      </div>
+
+      <!-- flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </form>
+  </div>
+</body>
+</html>
