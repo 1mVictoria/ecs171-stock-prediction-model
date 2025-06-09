@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """
 build_feat_tb.py  – Pre-compute the full feature table and pickle it
-                   for the Flask web-app (Option 1 workflow).
+                   for the Flask web-app.
 
 • Reads the three cleaned CSVs (prices, fundamentals, ESG)
-• Adds the 9 technical features exactly like train_random_forest.py
-• Keeps the 3 fundamental + 4 ESG columns → 16 total
-• Indexes the result by (symbol, date)   ← critical for fast lookup
 • Writes to  web-interface/static/data/feature_table.pkl
 """
 
@@ -14,10 +11,9 @@ import os
 import pickle
 import pandas as pd
 
-# Re-use the helpers already defined in train_random_forest.py
+# reusing from train_random_forest.py
 from train_random_forest import load_and_merge, compute_rsi
 
-# ──────────────────────────────────────────────────────────────
 FEATURE_COLS = [
     # 9 technical
     "close", "volume",
@@ -29,17 +25,17 @@ FEATURE_COLS = [
     "total esg risk score", "environment risk score",
     "social risk score", "governance risk score",
 ]
-# ──────────────────────────────────────────────────────────────
+
 
 
 def build_feature_table():
     base_dir = os.path.dirname(__file__)                     # …/src
     data_dir = os.path.abspath(os.path.join(base_dir, "..", "data_Cleaning", "cleaned"))
 
-    print(f"🔄  Loading & merging data from: {data_dir}")
+    print(f"Loading & merging data from: {data_dir}")
     df = load_and_merge(data_dir)                            # symbol, date, …
 
-    # ─── Technical features (identical to train_random_forest.py) ────────────
+    # 
     grp = df.groupby("symbol")["close"]
     df["ret_1d"]      = grp.pct_change(1)
     df["ret_2d"]      = grp.pct_change(2)
@@ -49,8 +45,8 @@ def build_feature_table():
     df["accel"]       = grp.diff().diff()
     df["rsi_14"]      = grp.transform(compute_rsi)
 
-    # ─── Assemble final table ────────────────────────────────────────────────
-    df["symbol"] = df["symbol"].str.upper()                  # force upper-case once
+    # Assemble final table
+    df["symbol"] = df["symbol"].str.upper()  
     out_df = (
         df[["symbol", "date"] + FEATURE_COLS]
         .dropna(subset=FEATURE_COLS)   # ← keep rows even if other feats NaN
@@ -58,7 +54,6 @@ def build_feature_table():
         .sort_index()
     )
 
-    # ─── Write pickle into web-interface/static/data ─────────────────────────
     project_root = os.path.abspath(os.path.join(base_dir, ".."))
     out_path     = os.path.join(
         project_root, "web-interface", "static", "data", "feature_table.pkl"
@@ -68,7 +63,7 @@ def build_feature_table():
     with open(out_path, "wb") as f:
         pickle.dump(out_df, f)
 
-    print(f"✅  Wrote feature table {out_df.shape} → {out_path}")
+    print(f"Wrote feature table {out_df.shape} → {out_path}")
 
 
 if __name__ == "__main__":
