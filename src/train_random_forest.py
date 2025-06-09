@@ -8,7 +8,14 @@ Binary labels:
     1 → actionable  (Buy **or** Sell; ±threshold on next-day return)
     0 → don't act   (Hold; within ±threshold)
 
-No future prices are leaked.
+Prerequisites
+
+- Python 3.8+  
+- pandas 1.5.3  
+- numpy 1.24.3  
+- scikit-learn 1.2.2  
+- imbalanced-learn 0.10.1  
+- matplotlib, seaborn  
 """
 import os, argparse, pickle
 import pandas as pd
