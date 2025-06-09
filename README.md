@@ -18,10 +18,6 @@ Hold the programming code for training and evaluating models:
 
 
 
-### `outputs/`
-Stores visualized results of model training like confusion matrices
-
-
 ## Key Points of the Project
 
 - Binary classification based on 21-day (around 1 month) price return (> ±1%)
