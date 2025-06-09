@@ -1,59 +1,42 @@
-# ECS-171-Group18 Final Project Update: 5/30
+# ECS-171-Group18 Final Project - Stock Action Prediction
 
-## Comparative Analysis Notes
-To ensure fair and consistent model comparison, please notice that:
 
-- Use the same dataset version:
-Since we find some unscaled data for the dataset uploaded before, you can use the ```merged.py``` to merge the unified dataset for comparative analysis (under temp_dataset direcotry).
-It includes Jashan’s engineer features and all unscaled data are scaled by using ```scaler = StandardScaler()```, which can be directly used for modeling.
+### `data_Cleaning/`
+Contains cleaned and preprocessed datasets, including:
+- `prices_cleaned.csv`
+- `fundamentals_cleaned.csv`
+- `esgRisk_cleaned.csv`
 
-- Make sure to use the same set of features during testing (as following code), so results are comparable across models.
+These files serve as input features for training the models.
 
-- Use a unified labeling format (Buy / Hold / Sell).
-If different labeling methods are used (binary vs. three), three models will not be directly comparable. If you use the ```merged.py```, it pre-label all datas so you can ignore this step.
-Labeling rule is explained in ```Labeling Clarification``` section if you want to check with. 
+---
 
-- Export visilization result since we cant not directly screenshot everything in our terminal for our final report. Use ```plt.savefig``` to help with.
+### `src/`
+Hold the programming code for training and evaluating models:
+- Includes implementation for Linear Regression, Logistic Regression, and Random Forest
+- Handles feature engineering, class balancing, and model optimization
 
-Features we considered right now:
-```python
-features = ['open', 'high', 'low', 'volume',
-            'Net Income', 'Total Revenue', 'Total Assets', 'Total Liabilities','Operating Margin',
-            'Gross Margin','Total ESG Risk score','Environment Risk Score',
-            'Social Risk Score', 'Governance Risk Score','Controversy Score','Current Ratio', 'Quick Ratio',
-            'ret_1d','vol_5d','ma_5d',
-            # if decide to use leaked data, use following features:
-            'close', 'fiveday_close',
-            ]
-```
-Split test and train as:
-```python
-train_test_split(X, y, test_size=0.2, random_state=42)
-```
+---
 
-## Labeling Clarification
+### `outputs/`
+Stores visual results of model training:
+- Evaluation reports, confusion matrices, and performance visualizations
 
-The `action` label is encoded to simplify the model training process:
+---
 
-- **Buy** = `1`  
-- **Hold** = `0`  
-- **Sell** = `-1`
+## Highlights
 
-Classification is based on the **1% Rule in Trading**:
+- Binary classification based on 21-day price return (> ±1%)
+- Total of 16 features: technicals & fundamentals & ESG
+- Random Forest achieved **88% accuracy**
 
-- If `pct_change > 1%` → **Buy**  
-- If `pct_change < -1%` → **Sell**  
-- Otherwise → **Hold**
+## Team Members
 
-### Formula for `pct_change`:
+Victoria Zhang, Jennifer Liu, Rafi Biswas, Jashan Singh, Stephanie Espinoza
 
-```python
-pct_change = (fiveday_close - close) / close
-```
+---
 
-Where:
-- `close` = 1st-day closing price  
-- `fiveday_close` = 5th-day closing price
 
-Which accomplish a short-term stock action prediction over a 5-day period.
+
+
 
