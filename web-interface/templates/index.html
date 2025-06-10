@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Stock Action Predictor</title>
 
-  <!-- Bootstrap (for flash alerts) -->
+  <!-- Bootstrap -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
         integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumFxp4CV0E7qO2Kc9vYJI67wLEnUE+d2Hdy4H/K"
@@ -14,86 +14,30 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
 </head>
 <body>
-  <div class="app-container">
-    <!-- blurred gradient blobs -->
-    <div class="bg-circle circle1"></div>
-    <div class="bg-circle circle2"></div>
+  <div class="app-container py-4">
 
-    <header>
+    <header class="text-center mb-5">
       <h1>Stock Action Predictor</h1>
-      <p class="subtitle">Binary recommendation: Hold vs&nbsp;Action</p>
+      <p class="subtitle">Binary recommendation: Hold vs Action</p>
     </header>
 
     <form method="post" action="{{ url_for('index') }}">
-      <!-- ticker entry -->
+
+      <!-- 1) Ticker input -->
       <div class="form-group ticker-entry">
         <label for="ticker">Ticker Symbol</label>
-        <input type="text" id="ticker" name="ticker"
-               class="form-control"
-               placeholder="e.g. NVDA" required
-               value="{{ request.form.ticker|default('') }}">
+        <input
+          type="text"
+          id="ticker"
+          name="ticker"
+          class="form-control"
+          placeholder="e.g. NVDA"
+          required
+          value="{{ request.form.ticker|default('') }}"
+        >
       </div>
 
-      <!-- three glass panels -->
-      <div class="panels-row">
-        <!-- TECH panel -->
-        <div class="panel">
-          <h2>Technical&nbsp;Metrics</h2>
-          {% for fld, lbl in [
-              ('close','Close'), ('volume','Volume'),
-              ('ret_1d','1-Day Ret'), ('ret_2d','2-Day Ret'),
-              ('momentum_5d','5-Day Momentum'), ('ma_5d','5-Day MA'),
-              ('vol_5d','5-Day Vol'), ('accel','Acceleration'),
-              ('rsi_14','RSI (14)')] %}
-            <div class="form-group">
-              <label for="{{ fld }}">{{ lbl }}</label>
-              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
-                     value="{{ feats[fld] if feats else '' }}">
-            </div>
-          {% endfor %}
-        </div>
-
-        <!-- FUND panel -->
-        <div class="panel">
-          <h2>Fundamental&nbsp;Metrics</h2>
-          {% for fld, lbl in [
-              ('eps','EPS'),
-              ('total_revenue','Revenue'),
-              ('net_income','Net Income')] %}
-            <div class="form-group">
-              <label for="{{ fld }}">{{ lbl }}</label>
-              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
-                     value="{{ feats[fld] if feats else '' }}">
-            </div>
-          {% endfor %}
-        </div>
-
-        <!-- ESG panel -->
-        <div class="panel">
-          <h2>ESG&nbsp;Metrics</h2>
-          {% for fld, lbl in [
-              ('total_esg','Total ESG Risk'),
-              ('env_risk','Env Risk'),
-              ('social_risk','Social Risk'),
-              ('gov_risk','Gov Risk')] %}
-            <div class="form-group">
-              <label for="{{ fld }}">{{ lbl }}</label>
-              <input type="text" id="{{ fld }}" name="{{ fld }}" readonly
-                     value="{{ feats[fld] if feats else '' }}">
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Predict button + live result -->
-      <div class="btn-wrapper" style="display:flex;justify-content:center;align-items:center;gap:1rem;">
-        <button type="submit" class="btn-predict">PREDICT</button>
-        {% if prediction %}
-          <span class="result">{{ prediction }}</span>
-        {% endif %}
-      </div>
-
-      <!-- flash messages -->
+      <!-- 2) Flash messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, msg in messages %}
@@ -101,6 +45,78 @@
           {% endfor %}
         {% endif %}
       {% endwith %}
+
+      <!-- 3) Feature panels -->
+      <div class="panels-row d-flex justify-content-between mt-4">
+        <!-- TECH panel -->
+        <div class="panel bg-light p-3 rounded flex-fill mr-2">
+          <h5 class="mb-3">Technical Metrics</h5>
+          {% for fld, lbl in [
+              ('close','Close'), ('volume','Volume'),
+              ('ret_1d','1-Day Ret'), ('ret_2d','2-Day Ret'),
+              ('momentum_5d','5-Day Momentum'), ('ma_5d','5-Day MA'),
+              ('vol_5d','5-Day Vol'), ('accel','Acceleration'),
+              ('rsi_14','RSI (14)')] %}
+            <div class="form-group">
+              <label>{{ lbl }}</label>
+              <input type="text"
+                     readonly
+                     class="form-control"
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- FUND panel -->
+        <div class="panel bg-light p-3 rounded flex-fill mx-2">
+          <h5 class="mb-3">Fundamental Metrics</h5>
+          {% for fld, lbl in [
+              ('eps','EPS'),
+              ('total_revenue','Revenue'),
+              ('net_income','Net Income')] %}
+            <div class="form-group">
+              <label>{{ lbl }}</label>
+              <input type="text"
+                     readonly
+                     class="form-control"
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- ESG panel -->
+        <div class="panel bg-light p-3 rounded flex-fill ml-2">
+          <h5 class="mb-3">ESG Metrics</h5>
+          {% for fld, lbl in [
+              ('total_esg','Total ESG Risk'),
+              ('env_risk','Env Risk'),
+              ('social_risk','Social Risk'),
+              ('gov_risk','Gov Risk')] %}
+            <div class="form-group">
+              <label>{{ lbl }}</label>
+              <input type="text"
+                     readonly
+                     class="form-control"
+                     value="{{ feats[fld] if feats else '' }}">
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- 4) Bottom Predict button -->
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary btn-lg px-5">
+          PREDICT
+        </button>
+      </div>
+
+      <!-- 5) Model result -->
+      {% if prediction %}
+        <div class="alert alert-info text-center mt-3">
+          <strong>Model says:</strong> {{ prediction }}
+        </div>
+      {% endif %}
+
     </form>
   </div>
 </body>
