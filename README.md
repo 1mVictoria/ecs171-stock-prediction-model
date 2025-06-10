@@ -21,7 +21,8 @@ This directory contains the training and evaluation scripts for all three models
 - Fits the model (with optional hyper-parameter search)  
 - Outputs performance metrics, plots, and a serialized model
 
-
+### ·web-interface/·
+This directory contains related files for web-interface.
 
 ## Linear Regression
 
@@ -42,10 +43,10 @@ python train_random_forest.py
 
 
 
-## Key Points of the Project
+## Notes
 
 - Binary classification based on 21-day (around 1 month) price return (> ±1%)
-- Random Forest achieved **88% accuracy**
+- Best model: Random Forest (achieved **88% accuracy**)
 
 
 
