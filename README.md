@@ -21,7 +21,7 @@ This directory contains the training and evaluation scripts for all three models
 - Fits the model (with optional hyper-parameter search)  
 - Outputs performance metrics, plots, and a serialized model
 
-### ·web-interface/·
+### `web-interface/`
 This directory contains related files for web-interface.
 
 ## Linear Regression
