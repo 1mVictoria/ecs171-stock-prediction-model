@@ -101,6 +101,9 @@ A simple Flask app that lets you enter a stock ticker, displays 16 key features 
 
 https://drive.google.com/file/d/1bxdC3QI0MxXf20LmhCrOp52fu7POmMmi/view?usp=sharing
 
+## Final Report
+- [ECS171 Final Report (PDF)](./ECS171_Stock_prediction_Group18.pdf)
+
 
 
 
